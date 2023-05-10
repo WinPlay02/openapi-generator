@@ -8,6 +8,7 @@
 {{!-- for enum schemas --}}
 {{#isEnum}}
 /// {{{description}}}
+#[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum {{{classname}}} {
 {{#allowableValues}}
@@ -40,6 +41,7 @@ impl Default for {{{classname}}} {
 
 {{!-- for schemas that have a discriminator --}}
 {{#discriminator}}
+#[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "{{{vendorExtensions.x-tag-name}}}")]
 pub enum {{{classname}}} {
@@ -64,6 +66,7 @@ pub enum {{{classname}}} {
 {{!-- for non-enum schemas --}}
 {{^isEnum}}
 {{^discriminator}}
+#[wasm_bindgen]
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct {{{classname}}} {
 {{#vars}}
@@ -75,6 +78,7 @@ pub struct {{{classname}}} {
 {{/vars}}
 }
 
+#[wasm_bindgen]
 impl {{{classname}}} {
     {{#description}}
     /// {{{.}}}
@@ -94,6 +98,7 @@ impl {{{classname}}} {
 {{#vars}}
 {{#isEnum}}
 /// {{{description}}}
+#[wasm_bindgen]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum {{{enumName}}} {
 {{#allowableValues}}
