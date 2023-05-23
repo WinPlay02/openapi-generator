@@ -42,7 +42,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.oas.models.servers.ServerVariable;
 import io.swagger.v3.parser.util.SchemaTypeUtil;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
@@ -50,7 +49,6 @@ import org.openapitools.codegen.CodegenDiscriminator.MappedModel;
 import org.openapitools.codegen.api.TemplatingEngineAdapter;
 import org.openapitools.codegen.config.GlobalSettings;
 import org.openapitools.codegen.examples.ExampleGenerator;
-import org.openapitools.codegen.languages.PythonClientCodegen;
 import org.openapitools.codegen.languages.RustServerCodegen;
 import org.openapitools.codegen.meta.FeatureSet;
 import org.openapitools.codegen.meta.GeneratorMetadata;
@@ -77,24 +75,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import io.swagger.v3.core.util.Json;
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.Operation;
-import io.swagger.v3.oas.models.PathItem;
-import io.swagger.v3.oas.models.callbacks.Callback;
-import io.swagger.v3.oas.models.examples.Example;
-import io.swagger.v3.oas.models.headers.Header;
-import io.swagger.v3.oas.models.media.*;
-import io.swagger.v3.oas.models.parameters.*;
-import io.swagger.v3.oas.models.responses.ApiResponse;
-import io.swagger.v3.oas.models.responses.ApiResponses;
-import io.swagger.v3.oas.models.security.OAuthFlow;
-import io.swagger.v3.oas.models.security.OAuthFlows;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
-import io.swagger.v3.oas.models.servers.ServerVariable;
-import io.swagger.v3.parser.util.SchemaTypeUtil;
 
 import static org.openapitools.codegen.CodegenConstants.UNSUPPORTED_V310_SPEC_MSG;
 import static org.openapitools.codegen.utils.OnceLogger.once;
@@ -148,8 +128,8 @@ public class DefaultCodegen implements CodegenConfig {
                 .includeSecurityFeatures(
                         SecurityFeature.BasicAuth, SecurityFeature.ApiKey, SecurityFeature.BearerToken,
                         SecurityFeature.OAuth2_Implicit, SecurityFeature.OAuth2_Password,
-                        SecurityFeature.OAuth2_ClientCredentials, SecurityFeature.OAuth2_AuthorizationCode
-                        // OpenIDConnect not yet supported
+                        SecurityFeature.OAuth2_ClientCredentials, SecurityFeature.OAuth2_AuthorizationCode,
+                        SecurityFeature.OpenIDConnect
                 )
                 .includeWireFormatFeatures(
                         WireFormatFeature.JSON, WireFormatFeature.XML
@@ -670,9 +650,7 @@ public class DefaultCodegen implements CodegenConfig {
                 removeSelfReferenceImports(cm);
 
                 if (!this.getLegacyDiscriminatorBehavior()) {
-                    // skip cleaning up mapped models for python client generator
-                    // which uses its own logic
-                    cm.addDiscriminatorMappedModelsImports(!(this instanceof PythonClientCodegen));
+                    cm.addDiscriminatorMappedModelsImports(true);
                 }
             }
         }
@@ -3796,14 +3774,13 @@ public class DefaultCodegen implements CodegenConfig {
 
         Schema original = null;
         // check if it's allOf (only 1 sub schema) with or without default/nullable/etc set in the top level
-        if (ModelUtils.isAllOf(p) && p.getAllOf().size() == 1 && !(this instanceof PythonClientCodegen)) {
+        if (ModelUtils.isAllOf(p) && p.getAllOf().size() == 1) {
             if (p.getAllOf().get(0) instanceof Schema) {
                 original = p;
                 p = (Schema) p.getAllOf().get(0);
             } else {
                 LOGGER.error("Unknown type in allOf schema. Please report the issue via openapi-generator's Github issue tracker.");
             }
-
         }
 
         CodegenProperty property = CodegenModelFactory.newInstance(CodegenModelType.PROPERTY);
@@ -5293,7 +5270,7 @@ public class DefaultCodegen implements CodegenConfig {
             final SecurityScheme securityScheme = securitySchemeMap.get(key);
             if (SecurityScheme.Type.APIKEY.equals(securityScheme.getType())) {
                 final CodegenSecurity cs = defaultCodegenSecurity(key, securityScheme);
-                cs.isBasic = cs.isOAuth = false;
+                cs.isBasic = cs.isOAuth = cs.isOpenId = false;
                 cs.isApiKey = true;
                 cs.keyParamName = securityScheme.getName();
                 cs.isKeyInHeader = securityScheme.getIn() == SecurityScheme.In.HEADER;
@@ -5302,7 +5279,7 @@ public class DefaultCodegen implements CodegenConfig {
                 codegenSecurities.add(cs);
             } else if (SecurityScheme.Type.HTTP.equals(securityScheme.getType())) {
                 final CodegenSecurity cs = defaultCodegenSecurity(key, securityScheme);
-                cs.isKeyInHeader = cs.isKeyInQuery = cs.isKeyInCookie = cs.isApiKey = cs.isOAuth = false;
+                cs.isKeyInHeader = cs.isKeyInQuery = cs.isKeyInCookie = cs.isApiKey = cs.isOAuth = cs.isOpenId = false;
                 cs.isBasic = true;
                 if ("basic".equalsIgnoreCase(securityScheme.getScheme())) {
                     cs.isBasicBasic = true;
@@ -5320,11 +5297,6 @@ public class DefaultCodegen implements CodegenConfig {
                 } else {
                     once(LOGGER).warn("Unknown scheme `{}` found in the HTTP security definition.", securityScheme.getScheme());
                 }
-                codegenSecurities.add(cs);
-            } else if (SecurityScheme.Type.OPENIDCONNECT.equals(securityScheme.getType())) {
-                final CodegenSecurity cs = defaultCodegenSecurity(key, securityScheme);
-                cs.isOpenId = true;
-                cs.openIdConnectUrl = securityScheme.getOpenIdConnectUrl();
                 codegenSecurities.add(cs);
             } else if (SecurityScheme.Type.OAUTH2.equals(securityScheme.getType())) {
                 final OAuthFlows flows = securityScheme.getFlows();
@@ -5368,6 +5340,15 @@ public class DefaultCodegen implements CodegenConfig {
                 if (isFlowEmpty) {
                     once(LOGGER).error("Invalid flow definition defined in the security scheme: {}", flows);
                 }
+            } else if (SecurityScheme.Type.OPENIDCONNECT.equals(securityScheme.getType())) {
+                final CodegenSecurity cs = defaultCodegenSecurity(key, securityScheme);
+                cs.isKeyInHeader = cs.isKeyInQuery = cs.isKeyInCookie = cs.isApiKey = cs.isBasic = false;
+                cs.isOpenId = true;
+                cs.openIdConnectUrl = securityScheme.getOpenIdConnectUrl();
+                if (securityScheme.getFlows() != null) {
+                    setOpenIdConnectInfo(cs, securityScheme.getFlows().getAuthorizationCode());
+                }
+                codegenSecurities.add(cs);
             } else {
                 once(LOGGER).error("Unknown type `{}` found in the security definition `{}`.", securityScheme.getType(), securityScheme.getName());
             }
@@ -5393,7 +5374,7 @@ public class DefaultCodegen implements CodegenConfig {
 
     private CodegenSecurity defaultOauthCodegenSecurity(String key, SecurityScheme securityScheme) {
         final CodegenSecurity cs = defaultCodegenSecurity(key, securityScheme);
-        cs.isKeyInHeader = cs.isKeyInQuery = cs.isKeyInCookie = cs.isApiKey = cs.isBasic = false;
+        cs.isKeyInHeader = cs.isKeyInQuery = cs.isKeyInCookie = cs.isApiKey = cs.isBasic = cs.isOpenId = false;
         cs.isOAuth = true;
         return cs;
     }
@@ -6612,6 +6593,18 @@ public class DefaultCodegen implements CodegenConfig {
                 Map<String, Object> scope = new HashMap<>();
                 scope.put("scope", scopeEntry.getKey());
                 scope.put("description", escapeText(scopeEntry.getValue()));
+                scopes.add(scope);
+            }
+            codegenSecurity.scopes = scopes;
+        }
+    }
+
+    private void setOpenIdConnectInfo(CodegenSecurity codegenSecurity, OAuthFlow flow) {
+        if (flow.getScopes() != null && !flow.getScopes().isEmpty()) {
+            List<Map<String, Object>> scopes = new ArrayList<>();
+            for (Map.Entry<String, String> scopeEntry : flow.getScopes().entrySet()) {
+                Map<String, Object> scope = new HashMap<>();
+                scope.put("scope", scopeEntry.getKey());
                 scopes.add(scope);
             }
             codegenSecurity.scopes = scopes;

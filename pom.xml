@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <name>openapi-generator-project</name>
     <!-- RELEASE_VERSION -->
-    <version>6.6.0-SNAPSHOT</version>
+    <version>7.0.0-SNAPSHOT</version>
     <!-- /RELEASE_VERSION -->
     <url>https://github.com/openapitools/openapi-generator</url>
     <scm>
@@ -254,7 +254,8 @@
                     <source>${maven.compiler.source}</source>
                     <encoding>UTF-8</encoding>
                     <maxmemory>1g</maxmemory>
-                    <failOnWarnings>true</failOnWarnings>
+                    <failOnWarnings>false</failOnWarnings>
+                    <doclint>none</doclint>
                 </configuration>
                 <executions>
                     <execution>
@@ -283,7 +284,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>enforce-versions</id>
@@ -293,7 +294,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>1.8.0</version>
+                                    <version>1.11.0</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
                                     <version>3.2.5</version>
@@ -313,7 +314,7 @@
             <plugin>
                 <groupId>de.thetaphi</groupId>
                 <artifactId>forbiddenapis</artifactId>
-                <version>2.6</version>
+                <version>3.5.1</version>
                 <configuration>
                     <bundledSignatures>
                         <!--
@@ -1036,18 +1037,6 @@
             </modules>
         </profile>
         <profile>
-            <id>python-client</id>
-            <activation>
-                <property>
-                    <name>env</name>
-                    <value>java</value>
-                </property>
-            </activation>
-            <modules>
-                <module>samples/client/petstore/python-prior</module>
-            </modules>
-        </profile>
-        <profile>
             <id>ruby-client</id>
             <activation>
                 <property>
@@ -1175,10 +1164,6 @@
                 <module>samples/client/petstore/rust/reqwest/petstore-async</module>
                 <module>samples/client/petstore/rust/reqwest/petstore-async-middleware</module>
                 <!--<module>samples/client/petstore/javascript-apollo</module>-->
-                <module>samples/client/petstore/python-legacy</module>
-                <module>samples/client/petstore/python-asyncio</module>
-                <module>samples/client/petstore/python-tornado</module>
-                <module>samples/openapi3/client/petstore/python-legacy</module>
             </modules>
         </profile>
         <!-- test with JDK8 in CircleCI -->
@@ -1220,11 +1205,8 @@
             </activation>
             <modules>
                 <!-- clients -->
-                <module>samples/openapi3/client/petstore/python-nextgen</module>
-                <module>samples/openapi3/client/petstore/python-nextgen-aiohttp</module>
-                <module>samples/client/petstore/python-prior</module>
-                <module>samples/client/petstore/python-prior_disallowAdditionalPropertiesIfNotPresent</module>
-                <!--<module>samples/openapi3/client/petstore/python-legacy</module>-->
+                <module>samples/openapi3/client/petstore/python</module>
+                <module>samples/openapi3/client/petstore/python-aiohttp</module>
                 <!-- TODO comment out below when the test for typescript-nestjs is ready
                 <module>samples/client/petstore/typescript-nestjs-v6-provided-in-root</module>-->
                 <!-- comment out due to error `npm run build`
@@ -1268,11 +1250,6 @@
                 </property>
             </activation>
             <modules>
-                <!-- python clients which don't need the server running -->
-                <module>samples/openapi3/client/petstore/python</module>
-                <!-- comment out due to ModuleNotFoundError: No module named 'urllib3.request'
-                    not fixing as python-prior will be removed soon
-                <module>samples/openapi3/client/petstore/python-prior</module>-->
             </modules>
         </profile>
         <!-- other tests in CircleCI -->
@@ -1463,8 +1440,8 @@
         </repository>
     </repositories>
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
 
         <archunit.version>0.23.1</archunit.version>
         <checkstyle.plugin.version>3.1.0</checkstyle.plugin.version>
@@ -1477,7 +1454,7 @@
         <git-commit-id-plugin.version>4.9.10</git-commit-id-plugin.version>
         <groovy.version>3.0.9</groovy.version>
         <guava.version>31.1-jre</guava.version>
-        <handlebars-java.version>4.2.1</handlebars-java.version>
+        <handlebars-java.version>4.3.1</handlebars-java.version>
         <jackson-threetenbp.version>2.12.5</jackson-threetenbp.version>
         <jackson-databind.version>2.14.0</jackson-databind.version>
         <jackson.version>2.14.0</jackson.version>
