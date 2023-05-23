@@ -209,6 +209,7 @@ public abstract class AbstractRustCodegen extends DefaultCodegen implements Code
         // There is currently a bug in Rust where this doesn't work for a few reserved words :(
         // https://internals.rust-lang.org/t/raw-identifiers-dont-work-for-all-identifiers/9094
         if (isReservedWord(name)) {
+            allowRawIdentifiers = false; // Patch: Do not allow raw names, as wasm-bindgen can't work with them
             nameWasModified = true;
             if (this.keywordsThatDoNotSupportRawIdentifiers.contains(name) || !allowRawIdentifiers) {
                 name = casingFunction.apply(escapePrefix + '_' + name);
