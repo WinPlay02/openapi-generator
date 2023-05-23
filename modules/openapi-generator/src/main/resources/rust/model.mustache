@@ -54,7 +54,7 @@ pub enum {{{classname}}} {
         /// {{{.}}}
         {{/description}}
         #[serde(rename = "{{{baseName}}}"{{^required}}, skip_serializing_if = "Option::is_none"{{/required}})]
-        {{{name}}}: {{#required}}{{#isNullable}}Option<{{/isNullable}}{{/required}}{{^required}}Option<{{/required}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{#isModel}}Box<{{{dataType}}}>{{/isModel}}{{^isModel}}{{{dataType}}}{{/isModel}}{{/isEnum}}{{#required}}{{#isNullable}}>{{/isNullable}}{{/required}}{{^required}}>{{/required}},
+        {{{name}}}: {{#required}}{{#isNullable}}Option<{{/isNullable}}{{/required}}{{^required}}Option<{{/required}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{#isModel}}{{{dataType}}}{{/isModel}}{{^isModel}}{{{dataType}}}{{/isModel}}{{/isEnum}}{{#required}}{{#isNullable}}>{{/isNullable}}{{/required}}{{^required}}>{{/required}},
     {{/vars}}
     },
     {{/x-mapped-models}}
@@ -73,8 +73,9 @@ pub struct {{{classname}}} {
     {{#description}}
     /// {{{.}}}
     {{/description}}
+    {{#isArray}}#[wasm_bindgen::prelude::wasm_bindgen(skip)]{{/isArray}}
     #[serde(rename = "{{{baseName}}}"{{^required}}{{#isNullable}}, default, with = "::serde_with::rust::double_option"{{/isNullable}}{{/required}}{{^required}}, skip_serializing_if = "Option::is_none"{{/required}}{{#required}}{{#isNullable}}, deserialize_with = "Option::deserialize"{{/isNullable}}{{/required}})]
-    pub {{{name}}}: {{#isNullable}}Option<{{/isNullable}}{{^required}}Option<{{/required}}{{#isEnum}}{{#isArray}}{{#uniqueItems}}std::collections::HashSet<{{/uniqueItems}}{{^uniqueItems}}Vec<{{/uniqueItems}}{{/isArray}}{{{enumName}}}{{#isArray}}>{{/isArray}}{{/isEnum}}{{^isEnum}}{{#isModel}}Box<{{{dataType}}}>{{/isModel}}{{^isModel}}{{{dataType}}}{{/isModel}}{{/isEnum}}{{#isNullable}}>{{/isNullable}}{{^required}}>{{/required}},
+    pub {{{name}}}: {{#isNullable}}Option<{{/isNullable}}{{^required}}Option<{{/required}}{{#isEnum}}{{#isArray}}{{#uniqueItems}}std::collections::HashSet<{{/uniqueItems}}{{^uniqueItems}}Vec<{{/uniqueItems}}{{/isArray}}{{{enumName}}}{{#isArray}}>{{/isArray}}{{/isEnum}}{{^isEnum}}{{#isModel}}{{{dataType}}}{{/isModel}}{{^isModel}}{{{dataType}}}{{/isModel}}{{/isEnum}}{{#isNullable}}>{{/isNullable}}{{^required}}>{{/required}},
 {{/vars}}
 }
 
@@ -85,10 +86,44 @@ impl {{{classname}}} {
     pub fn new({{#requiredVars}}{{{name}}}: {{#isNullable}}Option<{{/isNullable}}{{#isEnum}}{{#isArray}}Vec<{{/isArray}}{{{enumName}}}{{#isArray}}>{{/isArray}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{#isNullable}}>{{/isNullable}}{{^-last}}, {{/-last}}{{/requiredVars}}) -> {{{classname}}} {
         {{{classname}}} {
             {{#vars}}
-            {{{name}}}{{^required}}{{#isArray}}: None{{/isArray}}{{#isMap}}: None{{/isMap}}{{^isContainer}}: None{{/isContainer}}{{/required}}{{#required}}{{#isModel}}: {{^isNullable}}Box::new({{{name}}}){{/isNullable}}{{#isNullable}}if let Some(x) = {{{name}}} {Some(Box::new(x))} else {None}{{/isNullable}}{{/isModel}}{{/required}},
+            {{{name}}}{{^required}}{{#isArray}}: None{{/isArray}}{{#isMap}}: None{{/isMap}}{{^isContainer}}: None{{/isContainer}}{{/required}}{{#required}}{{#isModel}}: {{^isNullable}}{{{name}}}{{/isNullable}}{{#isNullable}}if let Some(x) = {{{name}}} {Some(x)} else {None}{{/isNullable}}{{/isModel}}{{/required}},
             {{/vars}}
         }
     }
+}
+
+#[wasm_bindgen::prelude::wasm_bindgen(getter_with_clone)]
+impl {{{classname}}} {
+{{#vars}}
+    {{#isArray}}{{^uniqueItems}}
+        {{#isNullable}}
+        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{{enumName}}}> {
+            if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+                return {{{name}}}_vec.get(index);
+            } else {
+                return None;
+            }
+        }
+        
+        pub fn {{{name}}}_len(&self) -> u32 {
+            if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+                return {{{name}}}_vec.len() as u32;
+            } else {
+                return 0u32;
+            }
+        }
+        {{/isNullable}}
+        {{^isNullable}}
+        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{{enumName}}}> {
+            self.{{{name}}}.get(index)
+        }
+        
+        pub fn {{{name}}}_len(&self) -> u32 {
+            self.{{{name}}}.len() as u32
+        }
+        {{/isNullable}}
+    {{/uniqueItems}}{{/isArray}}
+{{/vars}}
 }
 {{/discriminator}}
 {{/isEnum}}
