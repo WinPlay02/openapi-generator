@@ -97,7 +97,7 @@ impl {{{classname}}} {
 {{#vars}}
     {{#isArray}}{{^uniqueItems}}
         {{#isNullable}}
-        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{{enumName}}}> {
+        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#isEnum}}{{{enumName}}}{{/isEnum}}{{#isModel}}{{{dataType}}}{{/isModel}}> {
             if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
                 return {{{name}}}_vec.get(index);
             } else {
@@ -114,7 +114,7 @@ impl {{{classname}}} {
         }
         {{/isNullable}}
         {{^isNullable}}
-        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{{enumName}}}> {
+        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#isEnum}}{{{enumName}}}{{/isEnum}}{{#isModel}}{{{dataType}}}{{/isModel}}> {
             self.{{{name}}}.get(index)
         }
         
