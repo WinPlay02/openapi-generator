@@ -126,7 +126,7 @@ impl {{{classname}}} {
             return 0u32;
         }
     }
-    {{/required}}{{required}}
+    {{/required}}{{#required}}
     pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
         self.{{{name}}}.get(index)
     }
