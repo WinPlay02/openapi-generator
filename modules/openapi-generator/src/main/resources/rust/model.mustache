@@ -97,7 +97,7 @@ impl {{{classname}}} {
 {{#vars}}{{#isArray}}{{^uniqueItems}}{{#isNullable}}
     pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
         if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
-            return {{{name}}}_vec.get(index);
+            return {{{name}}}_vec.get(index).map(|v| v.clone());
         } else {
             return None;
         }
@@ -113,7 +113,7 @@ impl {{{classname}}} {
     {{/isNullable}}{{^isNullable}}{{^required}}
     pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
         if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
-            return {{{name}}}_vec.get(index);
+            return {{{name}}}_vec.get(index).map(|v| v.clone());
         } else {
             return None;
         }
@@ -128,7 +128,7 @@ impl {{{classname}}} {
     }
     {{/required}}{{#required}}
     pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
-        self.{{{name}}}.get(index)
+        self.{{{name}}}.get(index).map(|v| v.clone())
     }
     
     pub fn {{{name}}}_len(&self) -> u32 {
