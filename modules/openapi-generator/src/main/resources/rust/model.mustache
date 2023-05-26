@@ -94,36 +94,47 @@ impl {{{classname}}} {
 
 #[wasm_bindgen::prelude::wasm_bindgen(getter_with_clone)]
 impl {{{classname}}} {
-{{#vars}}
-    {{#isArray}}{{^uniqueItems}}
-        {{#isNullable}}
-        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
-            if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
-                return {{{name}}}_vec.get(index);
-            } else {
-                return None;
-            }
+{{#vars}}{{#isArray}}{{^uniqueItems}}{{#isNullable}}
+    pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
+        if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+            return {{{name}}}_vec.get(index);
+        } else {
+            return None;
         }
-        
-        pub fn {{{name}}}_len(&self) -> u32 {
-            if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
-                return {{{name}}}_vec.len() as u32;
-            } else {
-                return 0u32;
-            }
+    }
+    
+    pub fn {{{name}}}_len(&self) -> u32 {
+        if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+            return {{{name}}}_vec.len() as u32;
+        } else {
+            return 0u32;
         }
-        {{/isNullable}}
-        {{^isNullable}}
-        pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
-            self.{{{name}}}.get(index)
+    }
+    {{/isNullable}}{{^isNullable}}{{^required}}
+    pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
+        if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+            return {{{name}}}_vec.get(index);
+        } else {
+            return None;
         }
-        
-        pub fn {{{name}}}_len(&self) -> u32 {
-            self.{{{name}}}.len() as u32
+    }
+    
+    pub fn {{{name}}}_len(&self) -> u32 {
+        if let Some({{{name}}}_vec) = self.{{{name}}}.as_ref() {
+            return {{{name}}}_vec.len() as u32;
+        } else {
+            return 0u32;
         }
-        {{/isNullable}}
-    {{/uniqueItems}}{{/isArray}}
-{{/vars}}
+    }
+    {{/required}}{{required}}
+    pub fn {{{name}}}_get(&self, index: u32) -> Option<{{#items}}{{#isEnum}}{{{enumName}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{/items}}> {
+        self.{{{name}}}.get(index)
+    }
+    
+    pub fn {{{name}}}_len(&self) -> u32 {
+        self.{{{name}}}.len() as u32
+    }
+    {{/required}}{{/isNullable}}{{/uniqueItems}}{{/isArray}}{{/vars}}
 }
 {{/discriminator}}
 {{/isEnum}}
