@@ -26,9 +26,11 @@ import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.servers.Server;
 import io.swagger.v3.parser.core.models.ParseOptions;
 import org.openapitools.codegen.*;
+import org.openapitools.codegen.config.CodegenConfigurator;
 import org.openapitools.codegen.config.GlobalSettings;
 import org.openapitools.codegen.java.assertions.JavaFileAssert;
 import org.openapitools.codegen.languages.AbstractJavaCodegen;
+import org.openapitools.codegen.languages.JavaClientCodegen;
 import org.openapitools.codegen.languages.SpringCodegen;
 import org.openapitools.codegen.languages.features.BeanValidationFeatures;
 import org.openapitools.codegen.languages.features.CXFServerFeatures;
@@ -389,6 +391,46 @@ public class SpringCodegenTest {
     }
 
     @Test
+    public void testJavaClientCorrectConstructorOrderForRequiredFields_issue15825() throws IOException {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(JavaClientCodegen.MICROPROFILE_REST_CLIENT_VERSION, "3.0");
+
+        File output = Files.createTempDirectory("test").toFile();
+        output.deleteOnExit();
+
+        final CodegenConfigurator configurator = new CodegenConfigurator()
+                .setAdditionalProperties(properties)
+                .setGeneratorName("spring")
+                .setLibrary(SPRING_BOOT)
+                .setInputSpec("src/test/resources/bugs/issue_constructor-required-values-with-multiple-inheritance.yaml")
+                .setOutputDir(output.getAbsolutePath().replace("\\", "/"));
+
+        final ClientOptInput clientOptInput = configurator.toClientOptInput();
+        DefaultGenerator generator = new DefaultGenerator();
+        Map<String, File> files = generator.opts(clientOptInput).generate().stream()
+                .collect(Collectors.toMap(File::getName, Function.identity()));
+
+        JavaFileAssert.assertThat(files.get("SubType.java"))
+                .assertConstructor("TypeEnum", "SchemaVersion", "UUID", "Boolean", "Boolean", "SomeEnum")
+                .bodyContainsLines("super(someBoolean, someEnum, schemaVersion, id, oneBoolean);",
+                        "this.type = type;");
+        JavaFileAssert.assertThat(files.get("IntermediateSubType.java"))
+                .assertConstructor("Boolean", "SomeEnum", "SchemaVersion", "UUID", "Boolean")
+                .bodyContainsLines("super(oneBoolean, schemaVersion, id);",
+                        "this.someBoolean = someBoolean;",
+                        "this.someEnum = someEnum");
+        JavaFileAssert.assertThat(files.get("IntermediateType.java"))
+                .assertConstructor("Boolean", "SchemaVersion", "UUID")
+                .bodyContainsLines("super(schemaVersion, id);",
+                        "this.oneBoolean = oneBoolean;");
+        JavaFileAssert.assertThat(files.get("BaseType.java"))
+                .assertConstructor("SchemaVersion", "UUID")
+                .bodyContainsLines(
+                        "this.schemaVersion = schemaVersion;",
+                        "this.id = id;");
+    }
+
+    @Test
     public void springcloudWithAsyncAndJava8HasResponseWrapperCompletableFuture() {
         final SpringCodegen codegen = new SpringCodegen();
         codegen.additionalProperties().put(SpringCodegen.ASYNC, true);
@@ -603,6 +645,34 @@ public class SpringCodegenTest {
                 .hasParameter("statusArray").withType("List<MultipartMixedStatus>")
                 .assertParameterAnnotations()
                 .containsWithNameAndAttributes("RequestPart", ImmutableMap.of("value", "\"statusArray\"", "required", "false"));
+    }
+
+    @Test
+    public void testAdditionalProperties_issue1466() throws IOException {
+        final SpringCodegen codegen = new SpringCodegen();
+
+        final Map<String, File> files = generateFiles(codegen, "src/test/resources/3_0/spring/petstore-with-fake-endpoints-models-for-testing.yaml");
+
+        JavaFileAssert.assertThat(files.get("AdditionalPropertiesAnyType.java"))
+            .hasProperty("additionalProperties").withType("Map<String, Object>")
+            .toType()
+            .assertMethod("putAdditionalProperty", "String", "Object")
+            .toFileAssert()
+            .assertMethod("getAdditionalProperty", "String").hasReturnType("Object");
+
+        JavaFileAssert.assertThat(files.get("AdditionalPropertiesArray.java"))
+            .hasProperty("additionalProperties").withType("Map<String, List>")
+            .toType()
+            .assertMethod("putAdditionalProperty", "String", "List")
+            .toFileAssert()
+            .assertMethod("getAdditionalProperty", "String").hasReturnType("List");
+
+        JavaFileAssert.assertThat(files.get("AdditionalPropertiesInteger.java"))
+            .hasProperty("additionalProperties").withType("Map<String, Integer>")
+            .toType()
+            .assertMethod("putAdditionalProperty", "String", "Integer")
+            .toFileAssert()
+            .assertMethod("getAdditionalProperty", "String").hasReturnType("Integer");
     }
 
     @Test
@@ -1385,7 +1455,6 @@ public class SpringCodegenTest {
         final SpringCodegen codegen = new SpringCodegen();
         codegen.processOpts();
         Assert.assertEquals(codegen.importMapping().get("org.springframework.core.io.Resource"), "org.springframework.core.io.Resource");
-        Assert.assertEquals(codegen.importMapping().get("Pageable"), "org.springframework.data.domain.Pageable");
         Assert.assertEquals(codegen.importMapping().get("DateTimeFormat"), "org.springframework.format.annotation.DateTimeFormat");
         Assert.assertEquals(codegen.importMapping().get("ApiIgnore"), "springfox.documentation.annotations.ApiIgnore");
         Assert.assertEquals(codegen.importMapping().get("ParameterObject"), "org.springdoc.api.annotations.ParameterObject");
@@ -1781,11 +1850,29 @@ public class SpringCodegenTest {
         files = generateFromContract("src/test/resources/2_0/petstore-with-spring-pageable.yaml", SPRING_BOOT, additionalProperties);
 
         JavaFileAssert.assertThat(files.get("PetApi.java"))
-            .hasImports("org.springdoc.core.annotations.ParameterObject")
+            .hasImports("org.springdoc.core.annotations.ParameterObject", "org.springframework.data.domain.Pageable")
             .assertMethod("findPetsByStatus")
             .hasParameter("pageable").withType("Pageable")
             .assertParameterAnnotations()
             .containsWithName("ParameterObject");
+    }
+
+    @Test
+    public void paramPageableIsNotSpringPaginated_issue13052() throws Exception {
+        Map<String, Object> additionalProperties = new HashMap<>();
+        additionalProperties.put(SpringCodegen.USE_TAGS, "true");
+        additionalProperties.put(DOCUMENTATION_PROVIDER, "springdoc");
+        additionalProperties.put(SpringCodegen.INTERFACE_ONLY, "true");
+        additionalProperties.put(SpringCodegen.SKIP_DEFAULT_INTERFACE, "true");
+        additionalProperties.put(USE_SPRING_BOOT3, "true");
+
+        Map<String, File> files = generateFromContract("src/test/resources/bugs/issue_13052.yaml", SPRING_BOOT, additionalProperties);
+
+        JavaFileAssert.assertThat(files.get("PetApi.java"))
+                .hasImports("org.openapitools.model.Pageable")
+                .hasNoImports("org.springframework.data.domain.Pageable", "org.springdoc.core.annotations.ParameterObject")
+                .assertMethod("findPageable")
+                .hasParameter("pageable").withType("Pageable");
     }
 
     @Test

@@ -60,10 +60,11 @@ namespace Org.OpenAPITools.Model
         }
 
         /// <summary>
-        /// Returns a ZeroBasedEnumEnum
+        /// Returns a <see cref="ZeroBasedEnumEnum"/>
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public static ZeroBasedEnumEnum ZeroBasedEnumEnumFromString(string value)
         {
             if (value == "unknown")
@@ -76,7 +77,23 @@ namespace Org.OpenAPITools.Model
         }
 
         /// <summary>
-        /// Returns equivalent json value
+        /// Returns a <see cref="ZeroBasedEnumEnum"/>
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public static ZeroBasedEnumEnum? ZeroBasedEnumEnumFromStringOrDefault(string value)
+        {
+            if (value == "unknown")
+                return ZeroBasedEnumEnum.Unknown;
+
+            if (value == "notUnknown")
+                return ZeroBasedEnumEnum.NotUnknown;
+
+            return null;
+        }
+
+        /// <summary>
+        /// Converts the <see cref="ZeroBasedEnumEnum"/> to the json value
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -130,12 +147,12 @@ namespace Org.OpenAPITools.Model
     }
 
     /// <summary>
-    /// A Json converter for type ZeroBasedEnumClass
+    /// A Json converter for type <see cref="ZeroBasedEnumClass" />
     /// </summary>
     public class ZeroBasedEnumClassJsonConverter : JsonConverter<ZeroBasedEnumClass>
     {
         /// <summary>
-        /// A Json reader.
+        /// Deserializes json to <see cref="ZeroBasedEnumClass" />
         /// </summary>
         /// <param name="utf8JsonReader"></param>
         /// <param name="typeToConvert"></param>
@@ -151,7 +168,7 @@ namespace Org.OpenAPITools.Model
 
             JsonTokenType startingTokenType = utf8JsonReader.TokenType;
 
-            ZeroBasedEnumClass.ZeroBasedEnumEnum zeroBasedEnum = default;
+            ZeroBasedEnumClass.ZeroBasedEnumEnum? zeroBasedEnum = default;
 
             while (utf8JsonReader.Read())
             {
@@ -169,8 +186,10 @@ namespace Org.OpenAPITools.Model
                     switch (propertyName)
                     {
                         case "ZeroBasedEnum":
-                            string zeroBasedEnumRawValue = utf8JsonReader.GetString();
-                            zeroBasedEnum = ZeroBasedEnumClass.ZeroBasedEnumEnumFromString(zeroBasedEnumRawValue);
+                            string? zeroBasedEnumRawValue = utf8JsonReader.GetString();
+                            zeroBasedEnum = zeroBasedEnumRawValue == null
+                                ? null
+                                : ZeroBasedEnumClass.ZeroBasedEnumEnumFromStringOrDefault(zeroBasedEnumRawValue);
                             break;
                         default:
                             break;
@@ -178,20 +197,14 @@ namespace Org.OpenAPITools.Model
                 }
             }
 
-#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-#pragma warning disable CS8073 // The result of the expression is always the same since a value of this type is never equal to 'null'
-
             if (zeroBasedEnum == null)
                 throw new ArgumentNullException(nameof(zeroBasedEnum), "Property is required for class ZeroBasedEnumClass.");
 
-#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-#pragma warning restore CS8073 // The result of the expression is always the same since a value of this type is never equal to 'null'
-
-            return new ZeroBasedEnumClass(zeroBasedEnum);
+            return new ZeroBasedEnumClass(zeroBasedEnum.Value);
         }
 
         /// <summary>
-        /// A Json writer
+        /// Serializes a <see cref="ZeroBasedEnumClass" />
         /// </summary>
         /// <param name="writer"></param>
         /// <param name="zeroBasedEnumClass"></param>

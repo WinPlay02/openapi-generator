@@ -144,7 +144,6 @@ Class | Method | HTTP request | Description
  - [BasquePig](docs/BasquePig.md)
  - [Capitalization](docs/Capitalization.md)
  - [Cat](docs/Cat.md)
- - [CatAllOf](docs/CatAllOf.md)
  - [Category](docs/Category.md)
  - [CircularReferenceModel](docs/CircularReferenceModel.md)
  - [ClassModel](docs/ClassModel.md)
@@ -153,7 +152,6 @@ Class | Method | HTTP request | Description
  - [DanishPig](docs/DanishPig.md)
  - [DeprecatedObject](docs/DeprecatedObject.md)
  - [Dog](docs/Dog.md)
- - [DogAllOf](docs/DogAllOf.md)
  - [DummyModel](docs/DummyModel.md)
  - [EnumArrays](docs/EnumArrays.md)
  - [EnumClass](docs/EnumClass.md)
@@ -171,6 +169,7 @@ Class | Method | HTTP request | Description
  - [InnerDictWithProperty](docs/InnerDictWithProperty.md)
  - [IntOrString](docs/IntOrString.md)
  - [List](docs/List.md)
+ - [MapOfArrayOfModel](docs/MapOfArrayOfModel.md)
  - [MapTest](docs/MapTest.md)
  - [MixedPropertiesAndAdditionalPropertiesClass](docs/MixedPropertiesAndAdditionalPropertiesClass.md)
  - [Model200Response](docs/Model200Response.md)
@@ -246,6 +245,7 @@ Authentication schemes defined for the API:
 <a id="http_signature_test"></a>
 ### http_signature_test
 
+- **Type**: HTTP signature authentication
 
 
 ## Author
