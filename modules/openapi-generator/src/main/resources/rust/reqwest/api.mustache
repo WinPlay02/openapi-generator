@@ -99,7 +99,10 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     let local_var_uri_str = format!("{}{{{path}}}", local_var_configuration.base_path{{#pathParams}}, {{{baseName}}}={{#isString}}crate::apis::urlencode({{/isString}}{{{paramName}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{#isString}}){{/isString}}{{/pathParams}});
     let mut local_var_req_builder = local_var_client.request(reqwest::Method::{{{httpMethod}}}, local_var_uri_str.as_str());
     #[cfg(target_arch = "wasm32")]
-    local_var_req_builder = local_var_req_builder.fetch_credentials_include();
+    {
+        // Fetch requests need to send the credentials in cookies
+        local_var_req_builder = local_var_req_builder.fetch_credentials_include();
+    }
 
     {{#queryParams}}
     {{#required}}
